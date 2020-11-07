@@ -8,6 +8,9 @@ class PQ:
         for i in ip:
             self.push(i)
 
+    def not_empty(self):
+        return self.size>0 
+
     def push(self, ip):
         k = self.get_key(ip)
         if k in self.map:

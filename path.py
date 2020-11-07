@@ -95,7 +95,7 @@ def dfs(screen, grid, start, end, gap):
                     grid[top.i][top.j].draw(screen, 'PATH')
                     top = top.parent
                     draw_gridlines(gap, screen)
-                return
+                return 'Finished !!'
 
             if not grid[i][j].state:
                 grid[i][j].parent = top
@@ -105,6 +105,8 @@ def dfs(screen, grid, start, end, gap):
 
         top.draw(screen, 3 if (a, b) != start else 1)
         draw_gridlines(gap, screen)
+
+    return 'No path Found!!'
 
 
 def bfs(screen, grid, start, end, gap):
@@ -122,7 +124,7 @@ def bfs(screen, grid, start, end, gap):
                     grid[top.i][top.j].draw(screen, 'PATH')
                     top = top.parent
                     draw_gridlines(gap, screen)
-                return
+                return 'Finished !!'
 
             if not grid[i][j].state:
                 grid[i][j].parent = top
@@ -133,6 +135,7 @@ def bfs(screen, grid, start, end, gap):
 
         top.draw(screen, 3 if (a, b) != start else 1)
         draw_gridlines(gap, screen)
+    return 'No path Found!!'
 
 
 class AstarCarrier:
@@ -160,19 +163,19 @@ class AstarCarrier:
         return self.total_dis > other.total_dis
 
 
-def astar(screen, grid, start, end, gap):
+def astar(screen, grid, start, end, gap, dijkastra=False):
     to_visit = [AstarCarrier((start[0], start[1]))]
     astar_node_map = {}
     astar_node_map[start] = to_visit[0]
     to_visit = PQ(to_visit, lambda x: x.xy)
     visited = set()
 
-    while to_visit:
+    while to_visit.not_empty():
         top = to_visit.pop()
         visited.add(top.xy)
 
         if top.xy == end:
-            return
+            return 'Finished !!'
 
         x, y = top.xy
         top_spot = grid[x][y]
@@ -192,7 +195,7 @@ def astar(screen, grid, start, end, gap):
                 n = AstarCarrier(i, top)
                 n.dis_till_now = top.dis_till_now + 1
                 # n.dis_till_now = abs(start[0] - i[0]) + abs(start[1] - i[1])
-                n.poss_dis_left = abs(end[0] - i[0])**2 + abs(end[1] - i[1])**2
+                if not dijkastra: n.poss_dis_left = abs(end[0] - i[0])**2 + abs(end[1] - i[1])**2
                 # n.poss_dis_left = abs(end[0] - i[0]) + abs(end[1] - i[1])
                 n.total_dis = n.dis_till_now + n.poss_dis_left
                 to_visit.push(n)
@@ -204,15 +207,15 @@ def astar(screen, grid, start, end, gap):
         grid[x][y].draw(screen, 3 if (x, y) != start else 1)
         draw_gridlines(gap, screen)
 
-    return
+    return 'No path Found!!'
 
 
-def end_game(screen, DISPLAY_SIZE):
+def end_game(screen, DISPLAY_SIZE, header):
 
     screen.fill((255, 255, 255))
     x, y = DISPLAY_SIZE // 2, DISPLAY_SIZE // 3
     ft = pygame.font.Font('freesansbold.ttf', 32)
-    ft = ft.render('Finished !!', True, BLACK)
+    ft = ft.render(header, True, BLACK)
     fr = ft.get_rect()
     fr.center = (x, y)
     screen.blit(ft, fr)
@@ -259,20 +262,22 @@ while True:
             j.state = 0
             j.parent = None
 
-    screen.fill((255, 255, 255))
+    screen.fill(BLACK)
 
     while not selection:
-        text_x = DISPLAY_SIZE // 2
-        text_y = [(DISPLAY_SIZE // 5) * i for i in range(1, 5)]
-
-        # text_rect = [(text_x-50 , y-50 , 50 , 50) for y in text_y]
-        text = ['Choose Algorithm ?', 'DFS', 'BFS', 'A*']
+        text_pos = [(DISPLAY_SIZE // 2, DISPLAY_SIZE // 4),
+                    (DISPLAY_SIZE // 4, 2 * DISPLAY_SIZE // 4),
+                    (3 * DISPLAY_SIZE // 4, 2 * DISPLAY_SIZE // 4),  
+                    (DISPLAY_SIZE // 4, 3 * DISPLAY_SIZE // 4),
+                    (3 * DISPLAY_SIZE // 4, 3 * DISPLAY_SIZE // 4) ]
+        
+        text = ['Choose Algorithm ?', 'DFS', 'BFS', 'A*', 'Dijkastra']
         a = []
-        for t, y in zip(text, text_y):
+        for t, p in zip(text, text_pos) :
             font = pygame.font.Font('freesansbold.ttf', 32)
-            text = font.render(t, True, BLACK)
+            text = font.render(t, True, WHITE)
             textRect = text.get_rect()
-            textRect.center = (text_x, y)
+            textRect.center = p
             a.append((text, textRect))
 
         for i in a:
@@ -304,15 +309,18 @@ while True:
             draw_gridlines(gap, screen)
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN and start and end:
+                header = ''
                 if selection == 1:
-                    dfs(screen, mat, start, end, gap)
+                    header = dfs(screen, mat, start, end, gap)
                 elif selection == 2:
-                    bfs(screen, mat, start, end, gap)
+                    header = bfs(screen, mat, start, end, gap)
                 elif selection == 3:
-                    astar(screen, mat, start, end, gap)
+                    header = astar(screen, mat, start, end, gap)
+                elif selection == 4:
+                    header = astar(screen, mat, start, end, gap, True)
 
                 delay(1200)
-                playing = end_game(screen, DISPLAY_SIZE)
+                playing = end_game(screen, DISPLAY_SIZE, header)
                 break
 
             elif pygame.mouse.get_pressed()[0]:
